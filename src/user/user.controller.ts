@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
@@ -48,8 +49,13 @@ export class UserController {
 
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id) {
-    return {
-      id,
-    };
+    await this.exists(id);
+    return this.userService.delete(id);
+  }
+
+  async exists(id: number) {
+    if (!(await this.readOne(id))) {
+      throw new NotFoundException(`O usuário ${id} não existe`);
+    }
   }
 }
