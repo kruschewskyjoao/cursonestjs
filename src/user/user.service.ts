@@ -8,12 +8,13 @@ import { UpdatePatchUserDTO } from './dto/update-update-user.dto';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create({ email, name, password }: CreateUserDTO) {
+  async create({ email, name, password, birthAt }: CreateUserDTO) {
     return await this.prisma.users.create({
       data: {
         email,
         name,
         password,
+        birthAt: birthAt ? new Date(birthAt) : null,
       },
       //select vai retornar apois criação. Nesse caso vai retornar o id e name.
       //select: {
@@ -35,14 +36,38 @@ export class UserService {
     });
   }
 
-  async update(id: number, data: UpdatePutUserDTO) {
+  async update(
+    id: number,
+    { email, name, password, birthAt }: UpdatePutUserDTO,
+  ) {
     return this.prisma.users.update({
-      data,
+      data: {
+        email,
+        name,
+        password,
+        birthAt: birthAt ? new Date(birthAt) : null,
+      },
       where: { id },
     });
   }
 
-  async updatePartial(id: number, data: UpdatePatchUserDTO) {
+  async updatePartial(
+    id: number,
+    { email, name, password, birthAt }: UpdatePatchUserDTO,
+  ) {
+    const data: any = {};
+    if (birthAt) {
+      data.birthAt = new Date(birthAt);
+    }
+    if (email) {
+      data.email = email;
+    }
+    if (name) {
+      data.name = name;
+    }
+    if (password) {
+      data.password = password;
+    }
     return this.prisma.users.update({
       data,
       where: { id },
