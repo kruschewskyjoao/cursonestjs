@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CreateUserDTO } from './dto/create-user.dto';
@@ -15,15 +16,23 @@ import { UpdatePatchUserDTO } from './dto/update-update-user.dto';
 import { UserService } from './user.service';
 import { LogInterceptor } from 'src/interceptors/log.interceptor';
 import { ParamId } from 'src/decorators/param-id.decorator';
+import { Roles } from 'src/decorators/roles.decorator';
+import { Role } from 'src/enums/role.enum';
+import { RoleGuard } from 'src/guards/role.guard';
+import { AuthGuard } from 'src/guards/auth.guard';
 
+@Roles(Role.Admin)
+@UseGuards(AuthGuard, RoleGuard)
+@UseInterceptors(LogInterceptor)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @UseInterceptors(LogInterceptor)
   @Post()
-  async create(@Body() { name, email, password, birthAt }: CreateUserDTO) {
-    return this.userService.create({ email, name, password, birthAt });
+  async create(
+    @Body() { name, email, password, birthAt, role }: CreateUserDTO,
+  ) {
+    return this.userService.create({ email, name, password, birthAt, role });
   }
 
   @Get()
