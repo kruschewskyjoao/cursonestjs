@@ -4,8 +4,6 @@ import {
   Delete,
   Get,
   NotFoundException,
-  Param,
-  ParseIntPipe,
   Patch,
   Post,
   Put,
