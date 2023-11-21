@@ -4,6 +4,7 @@ import {
   Controller,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,7 +16,10 @@ import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { User } from 'src/decorators/user.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 import { join } from 'path';
 import { FileService } from 'src/file/file.service';
 
@@ -72,5 +76,27 @@ export class AuthController {
     return {
       sucess: true,
     };
+  }
+
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      {
+        name: 'photo',
+        maxCount: 5,
+      },
+      {
+        name: 'documents',
+        maxCount: 3,
+      },
+    ]),
+  )
+  @UseGuards(AuthGuard)
+  @Post('files-fields')
+  async uploadFilesFields(
+    @User() user,
+    @UploadedFiles()
+    files: { photo: Express.Multer.File[]; documents: Express.Multer.File[] },
+  ) {
+    return files;
   }
 }
