@@ -4,23 +4,25 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Users } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthRegister } from './dto/auth-register.dto';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
+import { UserEntity } from 'src/user/entity/user.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly mailer: MailerService,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
   ) {}
 
-  createToken(user: Users) {
+  createToken(user: UserEntity) {
     return {
       accessToken: this.jwtService.sign(
         {
@@ -60,7 +62,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.users.findFirst({
+    const user = await this.usersRepository.findOne({
       where: {
         email,
       },
@@ -77,11 +79,7 @@ export class AuthService {
   }
 
   async forget(email: string) {
-    const user = await this.prisma.users.findFirst({
-      where: {
-        email,
-      },
-    });
+    const user = await this.usersRepository.findOneBy({ email });
     if (!user) {
       throw new UnauthorizedException('E-mail está incorreto');
     }
@@ -123,14 +121,11 @@ export class AuthService {
         throw new BadRequestException('Token inválido');
       }
 
-      const user = await this.prisma.users.update({
-        where: {
-          id: Number(data.id),
-        },
-        data: {
-          password: await bcrypt.hash(password, await bcrypt.genSalt()),
-        },
+      await this.usersRepository.update(Number(data.id), {
+        password: await bcrypt.hash(password, await bcrypt.genSalt()),
       });
+
+      const user = await this.userService.show(Number(data.id));
       return this.createToken(user);
     } catch (error) {
       throw new BadRequestException(error);
