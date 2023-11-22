@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
+import { PathLike } from 'fs';
 import { writeFile } from 'fs/promises';
+import { join } from 'path';
 
 @Injectable()
 export class FileService {
-  async upload(file: Express.Multer.File, path: string) {
+  getDestinationPath() {
+    return join(__dirname, '..', '..', 'storage', 'photos');
+  }
+
+  async upload(file: Express.Multer.File, filename: string) {
     // caso tenha um banco basta mudar a const result. ex amazon
-    const result = await writeFile(path, file.buffer);
-    return result;
+    const path: PathLike = join(this.getDestinationPath(), filename);
+    return writeFile(path, file.buffer);
   }
 }
