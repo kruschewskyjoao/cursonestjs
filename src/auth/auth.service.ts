@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthRegister } from './dto/auth-register.dto';
-import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
-import { UserEntity } from 'src/user/entity/user.entity';
+import { UserEntity } from '../user/entity/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -62,11 +62,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.usersRepository.findOne({
-      where: {
-        email,
-      },
-    });
+    const user = await this.usersRepository.findOneBy({ email });
     if (!user) {
       throw new UnauthorizedException('Email ou senha incorretos.');
     }
@@ -113,9 +109,10 @@ export class AuthService {
   async reset(password: string, token: string) {
     try {
       const data = this.jwtService.verify(token, {
-        issuer: 'forget',
+        issuer: 'login',
         audience: 'users',
       });
+      console.log(data);
 
       if (isNaN(Number(data.id))) {
         throw new BadRequestException('Token inválido');
@@ -133,6 +130,7 @@ export class AuthService {
   }
 
   async register(data: AuthRegister) {
+    delete data.role;
     const user = await this.userService.create(data);
     return this.createToken(user);
   }
